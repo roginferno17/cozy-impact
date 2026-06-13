@@ -53,8 +53,11 @@ class Config:
     gold_hsv_upper: tuple = (30, 255, 255)
     # Minimum count of gold pixels in name_roi to call it "dialogue".
     # Calibration: real dialogue names measure ~4600-5400 px; normal scenery
-    # should be far below this. 1500 keeps ~3x headroom over the signal.
-    gold_pixel_min: int = 1500
+    # should be far below this. 1000 still clears scattered noise while
+    # admitting very short names (e.g. a 3-glyph "???" reads ~1165 gold px).
+    # Safe to keep low: every non-dialogue frame is already rejected by the
+    # HUD veto, so this count is a secondary text-shape gate, not the guard.
+    gold_pixel_min: int = 1000
     # Maximum fraction of name_roi that may be gold. A speaker name is thin
     # text and fills only a small part of the band (positives: 4-19%). A
     # glowing gold object that engulfs the band -- e.g. the "Enter Sanctuary"
@@ -68,7 +71,11 @@ class Config:
     #     spills taller).
     #   * it breaks into many letter-strokes (names: 9-33 components; a sun or
     #     flat golden texture is only 1-2 blobs).
-    gold_band_max: float = 0.82       # max height-fraction of the 85%-gold band
+    gold_band_max: float = 0.90       # max height-fraction of the 85%-gold band
+                                       # (0.90, not 0.82: a character's tall gold
+                                       # armor/hair beside the name spreads the
+                                       # band vertically on real dialogue; the
+                                       # HUD veto now guards free-roam gold)
     gold_min_components: int = 4      # min distinct gold blobs to look like text
     gold_band_coverage: float = 0.85  # fraction of gold the band must contain
     gold_component_min_area: int = 8  # ignore specks smaller than this
@@ -117,6 +124,28 @@ class Config:
     continue_gold_hsv_upper: tuple = (35, 255, 255)
     continue_gold_min: int = 250
     continue_min_row_transitions: int = 6
+
+    # --- Veto: 3+ selectable options (a real choice the player must make) ----
+    # An NPC/service menu (e.g. Katheryne) shows more than two option pills;
+    # pressing F would blindly pick one. So when >2 right-aligned option pills
+    # are present, suppress firing. Pills are detected by GEOMETRY -- a dark
+    # translucent box flush to the right screen edge carrying sparse, text-
+    # shaped bright pixels -- which survives the pills' transparency and text
+    # wrapping (one box = one option even if its text spans two lines). Tuned
+    # so every real-dialogue frame (incl. a bright character on the right side)
+    # reads <=2 pills, while a six-option menu reads 6.
+    options_roi: Roi = Roi(0.66, 0.16, 0.99, 0.82)
+    option_pill_v_max: int = 120          # pill bg is dark-ish
+    option_pill_s_max: int = 95           # ...and desaturated
+    option_pill_min_fill: float = 0.30    # row is >=30% pill bg
+    option_right_edge_min: float = 0.55   # far-right 10% is pill (flush to edge)
+    option_text_v_min: int = 200          # bright text sitting on the pill
+    option_text_frac_lo: float = 0.008    # sparse: real text, not a solid blob
+    option_text_frac_hi: float = 0.25
+    option_text_min_transitions: int = 4  # bright<->dark flips => letters
+    option_gap_close: int = 21            # bridge wrapped lines within one pill
+    option_min_band_h: int = 10           # a pill box is at least this tall (px)
+    option_veto_count: int = 3            # >2 options -> do not fire
 
     # --- Misc -------------------------------------------------------------
     startup_delay_s: float = 3.0       # grace period to tab into the game

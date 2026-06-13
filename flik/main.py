@@ -128,6 +128,7 @@ class Flik:
                               f"hud={result.hud_match:>4.2f} "
                               f"dark={result.dark_frac:>4.2f} "
                               f"cont={result.continue_hit!s:<5} "
+                              f"opts={result.option_rows:>2} "
                               f"choice={result.choice_pixels:>6}")
 
                     if result.dialogue:
