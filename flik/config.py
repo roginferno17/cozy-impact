@@ -31,7 +31,7 @@ class Config:
 
     # --- Key + timing -----------------------------------------------------
     skip_key: str = "f"
-    press_interval_s: float = 0.5      # "flik": one F every 0.5s
+    press_interval_s: float = 0.3      # "flik": one F every 0.3s
     poll_interval_s: float = 0.1       # how often we look at the screen (~10 fps)
 
     # --- Hotkeys ----------------------------------------------------------
@@ -41,9 +41,11 @@ class Config:
     # --- Detection: gold speaker-name band (bottom-center) ----------------
     # The gold speaker name appears here during dialogue lines.
     name_roi: Roi = Roi(0.28, 0.77, 0.72, 0.85)
-    # Genshin gold in OpenCV HSV (H 0-179). Tune with calibrate.py.
-    gold_hsv_lower: tuple = (15, 80, 120)
-    gold_hsv_upper: tuple = (35, 255, 255)
+    # Genshin name-gold in OpenCV HSV (H 0-179), measured from real dialogue:
+    # hue tightly clusters 15-30 and saturation stays high (>=~85). Warm
+    # scenery (pale sun glow, oranges) tends to fall outside this tighter band.
+    gold_hsv_lower: tuple = (15, 85, 120)
+    gold_hsv_upper: tuple = (30, 255, 255)
     # Minimum count of gold pixels in name_roi to call it "dialogue".
     # Calibration: real dialogue names measure ~4600-5400 px; normal scenery
     # should be far below this. 1500 keeps ~3x headroom over the signal.
@@ -65,6 +67,11 @@ class Config:
     gold_min_components: int = 4      # min distinct gold blobs to look like text
     gold_band_coverage: float = 0.85  # fraction of gold the band must contain
     gold_component_min_area: int = 8  # ignore specks smaller than this
+    # The single strongest "is this a line of text" signal: a real name flips
+    # gold->dark->gold many times across its busiest row (letters + gaps).
+    # Measured on real names: 11-35 transitions. A solid blob or smooth golden
+    # scenery yields 1-2; sparse scatter a few. Require a clearly text-like row.
+    gold_min_row_transitions: int = 6
 
     # --- Detection: reply-choice pills (right side) -----------------------
     # Covers choice screens that may have no bottom subtitle.

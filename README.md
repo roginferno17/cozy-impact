@@ -25,7 +25,7 @@ then *stops the instant the conversation ends*, so you never accidentally re-tri
 Some quest cutscenes in Genshin *can't* be skipped — you just have to sit there mashing **F**.
 `flik` does the mashing for you, but **only when there's actually dialogue on screen**:
 
-- 🗣️ Sees the **golden speaker name** + subtitle at the bottom → taps F every `0.5s`
+- 🗣️ Sees the **golden speaker name** + subtitle at the bottom → taps F every `0.3s`
 - 🛑 Sees nothing → goes quiet immediately (no stuck-in-a-loop re-chats!)
 - 🪟 Only ever presses while **Genshin is the focused window** — tab away and it auto-pauses
 
@@ -40,7 +40,7 @@ Some quest cutscenes in Genshin *can't* be skipped — you just have to sit ther
                                                               │
                                           ┌───────────────────┴───────────────────┐
                                        yes ▼                                    no ▼
-                                  tap F every 0.5s                          stay quiet
+                                  tap F every 0.3s                          stay quiet
 ```
 
 Detection reads two regions of the frame:
@@ -128,7 +128,7 @@ run.py           ▶️  entry point
 - [x] 🟡 **Gold-name detector** — validated on real dialogue (~4600+ gold px, 3× threshold headroom)
 - [x] ⚪ **Choice-pill detector** — fires on reply-choice screens
 - [x] 🪟 **Focused-window guard** — won't spam F into other apps
-- [x] ⌨️ **Press loop** — clean 0.5s cadence with pause / quit hotkeys
+- [x] ⌨️ **Press loop** — clean 0.3s cadence with pause / quit hotkeys
 - [x] 🧠 **Stricter dialogue gating** — gold speaker-name is the gate; ignores world-interaction
   prompts, the party list, and full-screen lore documents *(16/16 sample corpus passing)*
 - [x] 🩺 **Safe observe mode** — `--dry-run` logs decisions live without ever pressing F
@@ -155,3 +155,4 @@ run.py           ▶️  entry point
 *made for cozy questing 🍃*
 
 </div>
+

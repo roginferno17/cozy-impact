@@ -124,6 +124,7 @@ class Flik:
                               f"fill={result.gold_fill:>5.1%} "
                               f"band={result.gold_band:>5.1%} "
                               f"comps={result.gold_components:>3} "
+                              f"trans={result.gold_row_trans:>3} "
                               f"choice={result.choice_pixels:>6}")
 
                     if result.dialogue:

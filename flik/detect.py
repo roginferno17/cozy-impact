@@ -34,6 +34,7 @@ class DetectResult:
     gold_fill: float        # gold pixels / name ROI area (debug)
     gold_band: float        # height-fraction of the dense gold band (debug)
     gold_components: int    # number of gold blobs >= min area (debug)
+    gold_row_trans: int     # max gold->dark transitions in any row (debug)
     name_hit: bool
     choice_hit: bool
 
@@ -71,6 +72,16 @@ def _component_count(mask: np.ndarray, min_area: int) -> int:
                    if stats[i, cv2.CC_STAT_AREA] >= min_area))
 
 
+def _max_row_transitions(mask: np.ndarray) -> int:
+    """Most gold->non-gold(->gold) edges found in any single row. A line of
+    text has many (letters + gaps); a blob or smooth region has very few."""
+    if mask.size == 0:
+        return 0
+    b = (mask > 0).astype(np.int8)
+    trans = (np.diff(b, axis=1) == 1).sum(axis=1)
+    return int(trans.max()) if trans.size else 0
+
+
 def detect(frame: np.ndarray, cap: ScreenCapture, cfg: Config) -> DetectResult:
     name_crop = cap.crop(frame, cfg.name_roi)
     choice_crop = cap.crop(frame, cfg.choice_roi)
@@ -88,17 +99,20 @@ def detect(frame: np.ndarray, cap: ScreenCapture, cfg: Config) -> DetectResult:
     if gold >= cfg.gold_pixel_min:
         gold_band = _dense_band_fraction(mask, cfg.gold_band_coverage)
         gold_components = _component_count(mask, cfg.gold_component_min_area)
+        gold_row_trans = _max_row_transitions(mask)
     else:
-        gold_band, gold_components = 1.0, 0
+        gold_band, gold_components, gold_row_trans = 1.0, 0, 0
 
     # A real speaker-name must be: enough gold, sparse (not a solid flood),
-    # a single horizontal line (not vertically scattered scenery), and made of
-    # several strokes (not one blobby sun / golden texture).
+    # a single horizontal line (not vertically scattered scenery), made of
+    # several strokes, AND text-like across a row (many gold/dark transitions
+    # -- the strongest "this is a line of letters, not scenery" signal).
     name_hit = (
         gold >= cfg.gold_pixel_min
         and gold_fill <= cfg.gold_fill_max
         and gold_band <= cfg.gold_band_max
         and gold_components >= cfg.gold_min_components
+        and gold_row_trans >= cfg.gold_min_row_transitions
     )
     choice_hit = choice >= cfg.choice_pixel_min
 
@@ -114,6 +128,7 @@ def detect(frame: np.ndarray, cap: ScreenCapture, cfg: Config) -> DetectResult:
         gold_fill=gold_fill,
         gold_band=gold_band,
         gold_components=gold_components,
+        gold_row_trans=gold_row_trans,
         name_hit=name_hit,
         choice_hit=choice_hit,
     )
