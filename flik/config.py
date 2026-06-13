@@ -54,6 +54,17 @@ class Config:
     # portal door -- fills ~85%+. This upper gate rejects those solid fills
     # while leaving huge headroom over real names.
     gold_fill_max: float = 0.40
+    # The gold must be shaped like TEXT, not like scenery (sun, flowers, warm
+    # textures). Two structural gates, both comfortably satisfied by real names:
+    #   * it forms a single horizontal line -> the tightest row-band holding 85%
+    #     of the gold is short (names: 38-74% of the band; scattered scenery
+    #     spills taller).
+    #   * it breaks into many letter-strokes (names: 9-33 components; a sun or
+    #     flat golden texture is only 1-2 blobs).
+    gold_band_max: float = 0.82       # max height-fraction of the 85%-gold band
+    gold_min_components: int = 4      # min distinct gold blobs to look like text
+    gold_band_coverage: float = 0.85  # fraction of gold the band must contain
+    gold_component_min_area: int = 8  # ignore specks smaller than this
 
     # --- Detection: reply-choice pills (right side) -----------------------
     # Covers choice screens that may have no bottom subtitle.

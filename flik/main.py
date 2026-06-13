@@ -13,13 +13,16 @@ Hotkeys:
 
 from __future__ import annotations
 
+import os
 import time
+from datetime import datetime
 
+import cv2
 import keyboard
 
 from .config import CONFIG, Config
 from .capture import ScreenCapture
-from .detect import detect
+from .detect import detect, DetectResult
 from .inputs import press
 from .window import is_target_focused
 
@@ -35,16 +38,32 @@ def _is_admin() -> bool:
 
 class Flik:
     def __init__(self, cfg: Config = CONFIG, *, dry_run: bool = False,
-                 verbose: bool = False) -> None:
+                 verbose: bool = False, capture: bool = False) -> None:
         self.cfg = cfg
         self.dry_run = dry_run      # observe only: never actually press F
         self.verbose = verbose      # log detection telemetry every poll
+        self.capture = capture      # save a screenshot each time flik fires
+        self.capture_dir = "flik-captures"
         self.cap = ScreenCapture()
         self.enabled = True
         self.running = True
         self._last_press = 0.0
         self._last_dialogue_seen = 0.0
         self._last_verbose = 0.0
+        if self.capture:
+            os.makedirs(self.capture_dir, exist_ok=True)
+
+    def _save_capture(self, frame, result: DetectResult) -> None:
+        stamp = datetime.now().strftime("%H%M%S_%f")[:-3]
+        fname = (f"fire_{stamp}_gold{result.gold_pixels}"
+                 f"_band{int(result.gold_band * 100)}"
+                 f"_comps{result.gold_components}.png")
+        path = os.path.join(self.capture_dir, fname)
+        try:
+            cv2.imwrite(path, frame)
+            print(f"[flik] saved evidence frame -> {path}")
+        except Exception as exc:
+            print(f"[flik] could not save capture: {exc}")
 
     # --- hotkey handlers --------------------------------------------------
     def _toggle(self) -> None:
@@ -103,6 +122,8 @@ class Flik:
                         print(f"[flik] dialogue={result.dialogue!s:<5} "
                               f"gold={result.gold_pixels:>5} "
                               f"fill={result.gold_fill:>5.1%} "
+                              f"band={result.gold_band:>5.1%} "
+                              f"comps={result.gold_components:>3} "
                               f"choice={result.choice_pixels:>6}")
 
                     if result.dialogue:
@@ -119,6 +140,8 @@ class Flik:
                             tag = "choice" if result.choice_hit else "line"
                             mode = " [dry-run]" if self.dry_run else ""
                             print(f"[flik] dialogue start ({tag}) -> flik ON{mode}")
+                            if self.capture:
+                                self._save_capture(frame, result)
                         if now - self._last_press >= self.cfg.press_interval_s:
                             if self.dry_run:
                                 print("[flik] (dry-run) would press "

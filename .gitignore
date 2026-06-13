@@ -3,6 +3,7 @@
 images/
 negative-images/
 calibrate_out.png
+flik-captures/
 *.png
 *.jpg
 *.jpeg

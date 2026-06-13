@@ -62,6 +62,7 @@ def main() -> int:
             name = os.path.basename(path)
             print(f"  [{mark}] {name:<22} dialogue={r.dialogue!s:<5} "
                   f"gold={r.gold_pixels:>5} fill={r.gold_fill:>5.1%} "
+                  f"band={r.gold_band:>5.1%} comps={r.gold_components:>3} "
                   f"choice={r.choice_pixels:>6}")
             if not ok:
                 failures.append(path)

@@ -29,9 +29,15 @@ def main() -> None:
         action="store_true",
         help="log detection telemetry (gold/fill/choice) ~twice a second.",
     )
+    parser.add_argument(
+        "-c", "--capture",
+        action="store_true",
+        help="save a screenshot to flik-captures/ each time flik fires, so "
+             "false-fires can be inspected and the detector tuned.",
+    )
     args = parser.parse_args()
 
-    Flik(dry_run=args.dry_run, verbose=args.verbose).run()
+    Flik(dry_run=args.dry_run, verbose=args.verbose, capture=args.capture).run()
 
 
 if __name__ == "__main__":
