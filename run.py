@@ -2,7 +2,14 @@
 
 import argparse
 
-from flik.main import Flik
+try:
+    from flik.main import Flik
+except ImportError as exc:
+    print("flik couldn't start because a required library is missing:")
+    print(f"  {exc}")
+    print()
+    print("Fix: double-click  install.bat  once, then try again.")
+    raise SystemExit(1)
 
 
 def main() -> None:

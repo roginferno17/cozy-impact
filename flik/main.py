@@ -24,6 +24,15 @@ from .inputs import press
 from .window import is_target_focused
 
 
+def _is_admin() -> bool:
+    """True if running with Administrator rights (Windows)."""
+    try:
+        import ctypes
+        return bool(ctypes.windll.shell32.IsUserAnAdmin())
+    except Exception:
+        return False
+
+
 class Flik:
     def __init__(self, cfg: Config = CONFIG, *, dry_run: bool = False,
                  verbose: bool = False) -> None:
@@ -59,6 +68,18 @@ class Flik:
         print(f" F9  = pause/resume   F12 = quit")
         print(f" starting in {self.cfg.startup_delay_s:.0f}s - tab into the game...")
         print("=" * 56)
+
+        # --- plain-language health checks --------------------------------
+        if not self.dry_run and not _is_admin():
+            print(" NOTE: not running as Administrator. Genshin runs as admin,")
+            print("       so your F presses may NOT register in-game. If nothing")
+            print("       happens, close this and use the flik.bat launcher,")
+            print("       which asks for admin automatically.")
+            print("-" * 56)
+        if (self.cap.width, self.cap.height) != (1920, 1080):
+            print(f" NOTE: your screen is {self.cap.width}x{self.cap.height}, not")
+            print("       1920x1080. Detection is tuned for 1080p and may be off.")
+            print("-" * 56)
 
     def run(self) -> None:
         self._banner()

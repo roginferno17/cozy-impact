@@ -57,15 +57,31 @@ pixels and presses a key, the same as a macro keyboard would. 🎹
 
 ## 🚀 Quick start
 
+### 🖱️ The easy way (just double-click)
+
+On Windows you don't need to touch a terminal:
+
+| Double-click… | What it does |
+| :------------ | :----------- |
+| 1️⃣ `install.bat` | one-time setup — grabs the libraries flik needs |
+| 2️⃣ `observe.bat` | **safe test** — watches the screen and shows what it *would* do, but **never presses F** |
+| 3️⃣ `flik.bat` | the real thing — taps F through dialogue for you |
+
+> 🛡️ `flik.bat` and `observe.bat` will ask for **Administrator** permission — say yes.
+> Genshin runs as admin, so flik has to as well or your F presses won't register in the game.
+
+> 🩺 **Always try `observe.bat` first.** Hop into a quest cutscene and watch it print
+> `dialogue=True` only while real dialogue is on screen — and stay quiet on menus, prompts,
+> and lore documents. Once you're happy, use `flik.bat`.
+
+### ⌨️ The terminal way (for developers)
+
 ```bash
 pip install -r requirements.txt
-python run.py
+python run.py              # run for real
+python run.py --dry-run -v # observe only, with live readout
 ```
 
-> 🩺 **First time? Fly blind-safe.** Run `python run.py --dry-run` (alias `--observe`) to
-> watch flik's decisions live — it logs detection and *what it would press* but **never touches the
-> F key**. Add `-v` / `--verbose` for a live gold/fill/choice readout. Once it looks right, drop the
-> flag and let it press for real.
 
 | Key | Action |
 | :-: | :----- |
