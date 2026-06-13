@@ -48,6 +48,12 @@ class Config:
     # Calibration: real dialogue names measure ~4600-5400 px; normal scenery
     # should be far below this. 1500 keeps ~3x headroom over the signal.
     gold_pixel_min: int = 1500
+    # Maximum fraction of name_roi that may be gold. A speaker name is thin
+    # text and fills only a small part of the band (positives: 4-19%). A
+    # glowing gold object that engulfs the band -- e.g. the "Enter Sanctuary"
+    # portal door -- fills ~85%+. This upper gate rejects those solid fills
+    # while leaving huge headroom over real names.
+    gold_fill_max: float = 0.40
 
     # --- Detection: reply-choice pills (right side) -----------------------
     # Covers choice screens that may have no bottom subtitle.

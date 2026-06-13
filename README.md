@@ -93,6 +93,7 @@ flik/
  ├─ inputs.py    ⌨️  F keypress via pydirectinput
  └─ main.py      🔁  the loop
 calibrate.py     🧪  detection debug / tuning tool
+validate.py      ✅  regression check over the labeled sample corpus
 run.py           ▶️  entry point
 ```
 
@@ -107,7 +108,8 @@ run.py           ▶️  entry point
 - [x] ⚪ **Choice-pill detector** — fires on reply-choice screens
 - [x] 🪟 **Focused-window guard** — won't spam F into other apps
 - [x] ⌨️ **Press loop** — clean 0.5s cadence with pause / quit hotkeys
-- [ ] 🧠 **Stricter dialogue gating** — ignore world-interaction prompts & party menus *(in progress)*
+- [x] 🧠 **Stricter dialogue gating** — gold speaker-name is the gate; ignores world-interaction
+  prompts, the party list, and full-screen lore documents *(16/16 sample corpus passing)*
 - [ ] 🔤 **F-glyph template fallback** — for the rare choice screen with no subtitle
 - [ ] 🎮 **Field-testing** across full quest chains
 

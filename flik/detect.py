@@ -1,12 +1,18 @@
 """
 Dialogue detection.
 
-Two independent signals; either one being present means "dialogue is on
-screen, flik should run":
+The golden speaker-name bar in the bottom-center band is the NECESSARY signal:
+every real dialogue screen — plain lines AND in-dialogue choice screens — shows
+it. So it is the gate.
 
-  1. Gold speaker-name text in the bottom-center band (normal dialogue lines).
-  2. Bright reply-choice pills on the right (choice screens, which may have
-     no bottom subtitle).
+  1. Gold speaker-name text in the bottom-center band  -> the gate (name_hit).
+  2. Bright reply-choice text on the right             -> informational only.
+
+The choice signal alone is NOT trusted, because bright text on the right also
+appears on things flik must ignore: world-interaction F-prompts ("Enter
+Sanctuary..."), the party-member list during free roam, and full-screen
+readable lore documents (which can only be closed with the ✕, not F). All of
+those lack the bottom gold name, so gating on name_hit rejects them.
 """
 
 from __future__ import annotations
@@ -25,6 +31,7 @@ class DetectResult:
     dialogue: bool          # final decision: is dialogue on screen?
     gold_pixels: int        # gold count in name ROI (debug)
     choice_pixels: int      # bright count in choice ROI (debug)
+    gold_fill: float        # gold pixels / name ROI area (debug)
     name_hit: bool
     choice_hit: bool
 
@@ -44,13 +51,24 @@ def detect(frame: np.ndarray, cap: ScreenCapture, cfg: Config) -> DetectResult:
         choice_crop, cfg.choice_white_hsv_lower, cfg.choice_white_hsv_upper
     )
 
-    name_hit = gold >= cfg.gold_pixel_min
+    name_area = int(name_crop.shape[0] * name_crop.shape[1]) or 1
+    gold_fill = gold / name_area
+
+    # Gold name must clear the min count AND be sparse like text -- not a solid
+    # gold fill (a glowing portal door floods the band but isn't a name).
+    name_hit = (gold >= cfg.gold_pixel_min) and (gold_fill <= cfg.gold_fill_max)
     choice_hit = choice >= cfg.choice_pixel_min
 
+    # Gold speaker-name is the gate. Choice is kept for debugging/telemetry but
+    # never triggers on its own — that's what caused false-fires on world
+    # prompts, the party list, and lore documents.
+    dialogue = name_hit
+
     return DetectResult(
-        dialogue=name_hit or choice_hit,
+        dialogue=dialogue,
         gold_pixels=gold,
         choice_pixels=choice,
+        gold_fill=gold_fill,
         name_hit=name_hit,
         choice_hit=choice_hit,
     )

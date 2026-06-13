@@ -49,6 +49,8 @@ def main() -> None:
     print("-" * 48)
     print(f"gold pixels (name ROI)  : {result.gold_pixels:>6}  "
           f"(threshold {CONFIG.gold_pixel_min}) -> hit={result.name_hit}")
+    print(f"gold fill (name ROI)    : {result.gold_fill:>6.1%}  "
+          f"(max {CONFIG.gold_fill_max:.0%})")
     print(f"choice pixels (right ROI): {result.choice_pixels:>6}  "
           f"(threshold {CONFIG.choice_pixel_min}) -> hit={result.choice_hit}")
     print("-" * 48)
