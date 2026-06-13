@@ -4,16 +4,17 @@
 
 ### *blink, and the dialogue's gone* 💨
 
-**A cozy little screen-reading auto-presser for Genshin Impact's unskippable quest chatter.**
+**A cozy, screen-reading auto-presser for Genshin Impact's unskippable quest chatter.**
 
 `flik` watches your screen and gently taps **F** through dialogue lines while you sip your coffee ☕ —
 then *stops the instant the conversation ends*, so you never accidentally re-trigger a chat.
 
 <br>
 
-![status](https://img.shields.io/badge/status-detection_working-success?style=for-the-badge)
+![status](https://img.shields.io/badge/status-working-success?style=for-the-badge)
 ![python](https://img.shields.io/badge/python-3.12-blue?style=for-the-badge&logo=python&logoColor=white)
 ![mode](https://img.shields.io/badge/mode-foreground_only-orange?style=for-the-badge)
+![input](https://img.shields.io/badge/input-only-9cf?style=for-the-badge)
 ![res](https://img.shields.io/badge/tuned_for-1080p-ff69b4?style=for-the-badge)
 
 </div>
@@ -25,8 +26,8 @@ then *stops the instant the conversation ends*, so you never accidentally re-tri
 Some quest cutscenes in Genshin *can't* be skipped — you just have to sit there mashing **F**.
 `flik` does the mashing for you, but **only when there's actually dialogue on screen**:
 
-- 🗣️ Sees the **golden speaker name** + subtitle at the bottom → taps F every `0.3s`
-- 🛑 Sees nothing → goes quiet immediately (no stuck-in-a-loop re-chats!)
+- 🗣️ Sees a real conversation → taps **F** every `0.3s`
+- 🛑 Sees free roam, menus, or world prompts → stays completely quiet
 - 🪟 Only ever presses while **Genshin is the focused window** — tab away and it auto-pauses
 
 > It's the digital equivalent of a friend nudging the F key for you. Nothing more. 🫶
@@ -35,23 +36,32 @@ Some quest cutscenes in Genshin *can't* be skipped — you just have to sit ther
 
 ## 🔍 How it works
 
+`flik` never reads or touches the game's process or memory. It just **looks at pixels** and presses a
+key — the same lane as a hardware macro keyboard. 🎹
+
+To decide "is this *really* dialogue?", it checks **two things that must BOTH be true**:
+
 ```
-   screen  ──▶  capture (mss)  ──▶  detect (opencv)  ──▶  is this real dialogue?
-                                                              │
-                                          ┌───────────────────┴───────────────────┐
-                                       yes ▼                                    no ▼
-                                  tap F every 0.3s                          stay quiet
+   screen ─▶ capture (mss) ─▶ detect (opencv) ─┬─ ① gold speaker-name in the bottom band?
+                                               │
+                                               └─ ② "⏸ Playing" HUD bar in the top-left?
+                                                          │
+                                       both yes ▼                    anything else ▼
+                                    tap F every 0.3s                    stay quiet
 ```
 
-Detection reads two regions of the frame:
+| # | Signal | Why it matters |
+| :-: | :----- | :------------- |
+| ① | 🟡 **Gold speaker-name** | The warm-gold name line at the bottom, shaped like *text* (many letter-strokes), not a solid gold blob. |
+| ② | ⏸️ **"Playing" HUD bar** | Genshin only shows this top-left bar **during dialogue/cutscenes** — free roam shows the minimap + party list instead. |
 
-| Signal | What it looks for | Region |
-| :----- | :---------------- | :----- |
-| 🟡 **Gold name bar** | the warm-gold speaker name at the bottom-center | `name_roi` |
-| ⚪ **Reply pills** | bright white choice text on the right | `choice_roi` |
+That second check is the secret sauce. 🔑 Plenty of things in the open world are gold — gilded NPC
+guards, a gold-trimmed outfit, sunlight on water — and color alone can't always tell them apart from
+gold *text*. But the **"Playing" bar only ever appears in real dialogue**, so requiring it means
+flik stays silent in the open world no matter how much gold is on screen.
 
-…and it's **read-only**: `flik` never reads or touches the game process or memory. It just looks at
-pixels and presses a key, the same as a macro keyboard would. 🎹
+> 🧪 Detection is regression-tested against a labeled set of real dialogue **and** real free-roam
+> frames (including ones that *used* to false-fire) — every one classifies correctly.
 
 ---
 
@@ -72,16 +82,15 @@ On Windows you don't need to touch a terminal:
 
 > 🩺 **Always try `observe.bat` first.** Hop into a quest cutscene and watch it print
 > `dialogue=True` only while real dialogue is on screen — and stay quiet on menus, prompts,
-> and lore documents. Once you're happy, use `flik.bat`.
+> free roam, and lore documents. Once you're happy, use `flik.bat`.
 
 ### ⌨️ The terminal way (for developers)
 
 ```bash
 pip install -r requirements.txt
-python run.py              # run for real
-python run.py --dry-run -v # observe only, with live readout
+python run.py               # run for real
+python run.py --dry-run -v  # observe only, with live readout
 ```
-
 
 | Key | Action |
 | :-: | :----- |
@@ -98,7 +107,7 @@ Want to sanity-check detection on a screenshot first?
 python calibrate.py path\to\dialogue_screenshot.png
 ```
 
-It prints the gold/choice pixel counts + the dialogue decision, and writes `calibrate_out.png`
+It prints the gold / HUD / choice readouts + the dialogue decision, and writes `calibrate_out.png`
 with the detection regions drawn on top so you can *see* what `flik` sees. 👀
 
 ---
@@ -109,14 +118,19 @@ with the detection regions drawn on top so you can *see* what `flik` sees. 👀
 flik/
  ├─ config.py    🎛️  ROIs, colors, thresholds, hotkeys, timing
  ├─ capture.py   📸  mss screen grab + ROI cropping
- ├─ detect.py    🔎  gold-name + choice-pill detection
+ ├─ detect.py    🔎  gold-name + "Playing" HUD detection
  ├─ window.py    🪟  focused-window guard
  ├─ inputs.py    ⌨️  F keypress via pydirectinput
+ ├─ assets/
+ │   └─ playing_bar.png   🧩  the "⏸ Playing" HUD template flik matches against
  └─ main.py      🔁  the loop
 calibrate.py     🧪  detection debug / tuning tool
-validate.py      ✅  regression check over the labeled sample corpus
+validate.py      ✅  regression check over a labeled sample corpus
 run.py           ▶️  entry point
 ```
+
+> 🖼️ The only image that ships with flik is `flik/assets/playing_bar.png` — a tiny, cropped grayscale
+> picture of the **"⏸ Playing"** HUD glyph. It contains no account data and is required for detection.
 
 ---
 
@@ -125,19 +139,13 @@ run.py           ▶️  entry point
 - [x] 🎯 **Concept locked** — dialogue-aware foreground F auto-presser
 - [x] 🏗️ **Scaffold built** — full package compiles clean
 - [x] 📸 **Capture + detection pipeline** — mss grab → opencv ROI analysis
-- [x] 🟡 **Gold-name detector** — validated on real dialogue (~4600+ gold px, 3× threshold headroom)
-- [x] ⚪ **Choice-pill detector** — fires on reply-choice screens
+- [x] 🟡 **Gold-name detector** — text-shaped gold in the bottom band (left-aligned *and* centered)
+- [x] ⏸️ **"Playing" HUD veto** — requires the dialogue-only top-left bar, so gold clothing and gold
+  scenery in free roam can never trigger a press
 - [x] 🪟 **Focused-window guard** — won't spam F into other apps
 - [x] ⌨️ **Press loop** — clean 0.3s cadence with pause / quit hotkeys
-- [x] 🧠 **Stricter dialogue gating** — gold speaker-name is the gate; ignores world-interaction
-  prompts, the party list, and full-screen lore documents
-- [x] 🛡️ **Dialogue-HUD veto** — also requires the top-left **"⏸ Playing"** bar (which Genshin only
-  shows during dialogue/cutscenes), so gold *clothing* and gold *scenery* in free roam can never
-  trigger a press *(17/17 sample corpus passing, including a real false-fire frame)*
 - [x] 🩺 **Safe observe mode** — `--dry-run` logs decisions live without ever pressing F
-- [ ] 🔤 **F-glyph template fallback** — *deferred*: every dialogue/choice we've seen carries a gold
-  name, and a raw F-glyph match would re-trigger on world prompts. Revisit only if a gold-name-less
-  dialogue screen turns up.
+- [x] ✅ **Regression corpus** — labeled real-dialogue + free-roam frames, all classified correctly
 - [ ] 🎮 **Field-testing** across full quest chains
 
 ---
@@ -149,7 +157,8 @@ run.py           ▶️  entry point
 - **Input-only**, no process/memory access — same lane as a hardware macro.
 - This is **not** an officially-blessed tool. HoYoverse's ToS has broad anti-automation language,
   so use it thoughtfully and at your own risk. 🙏
-- Thresholds are tuned for **1080p** — other resolutions? Re-run `calibrate.py`. 🎚️
+- Thresholds and the HUD template are tuned for **1080p**. The template auto-scales to your
+  resolution, but if detection feels off, run `calibrate.py` to check. 🎚️
 
 <div align="center">
 
@@ -158,4 +167,3 @@ run.py           ▶️  entry point
 *made for cozy questing 🍃*
 
 </div>
-
