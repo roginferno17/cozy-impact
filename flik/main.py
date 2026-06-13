@@ -49,6 +49,7 @@ class Flik:
         self.running = True
         self._last_press = 0.0
         self._last_dialogue_seen = 0.0
+        self._last_menu_seen = 0.0
         self._last_verbose = 0.0
         if self.capture:
             os.makedirs(self.capture_dir, exist_ok=True)
@@ -134,6 +135,8 @@ class Flik:
 
                     if result.dialogue:
                         self._last_dialogue_seen = now
+                    if result.many_options:
+                        self._last_menu_seen = now
 
                     # Stay active through brief dropouts via the grace window --
                     # BUT a >=2-option choice menu is an explicit "do not press"
@@ -141,9 +144,19 @@ class Flik:
                     # bypasses the grace tail (otherwise flik would coast on for
                     # off_grace_s and tap F straight into the menu, picking an
                     # option for the player).
+                    #
+                    # The veto is LATCHED for veto_hold_s after the last menu
+                    # frame: the pills + key-cap animate in/out and can flicker
+                    # below threshold for a frame, and without the latch flik
+                    # would sneak a press into that gap and pick an option. The
+                    # menu persists until the player chooses, so the latch keeps
+                    # refreshing and only delays resume briefly after a pick.
+                    menu_latched = (
+                        now - self._last_menu_seen <= self.cfg.veto_hold_s
+                    )
                     dialogue_live = (
                         now - self._last_dialogue_seen <= self.cfg.off_grace_s
-                        and not result.many_options
+                        and not menu_latched
                     )
 
                     if dialogue_live:

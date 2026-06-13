@@ -187,6 +187,15 @@ class Config:
     # Keep flik running for a short tail after dialogue vanishes, to ride out
     # 1-frame detection dropouts mid-conversation (animation transitions etc).
     off_grace_s: float = 0.6
+    # Choice-menu veto LATCH. The option pills + F key-cap animate in (pills
+    # slide from the right, the key-cap fades in), so for a frame or two during
+    # that transition the veto signal can momentarily drop below threshold.
+    # Without a latch, flik would slip a press into that gap and pick an option.
+    # Once a >=2-option menu is seen we therefore HOLD the stop for this long,
+    # refreshed on every menu frame -- so a brief flicker can't release it. The
+    # menu stays on screen until the player picks, so this only delays flik's
+    # resume by ~this much after a choice is made.
+    veto_hold_s: float = 1.0
 
 
 CONFIG = Config()
