@@ -1,0 +1,33 @@
+# --- Sensitive / personal data ---
+# Screenshots contain the player's account UID and in-game state — keep them local only.
+images/
+negative-images/
+calibrate_out.png
+*.png
+*.jpg
+*.jpeg
+
+# Environment / secrets
+.env
+.env.*
+*.secret
+secrets/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.mypy_cache/
+.pytest_cache/
+
+# --- Editor / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
