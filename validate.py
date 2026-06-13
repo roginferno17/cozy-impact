@@ -63,7 +63,8 @@ def main() -> int:
             print(f"  [{mark}] {name:<22} dialogue={r.dialogue!s:<5} "
                   f"gold={r.gold_pixels:>5} fill={r.gold_fill:>5.1%} "
                   f"band={r.gold_band:>5.1%} comps={r.gold_components:>3} "
-                  f"trans={r.gold_row_trans:>3} choice={r.choice_pixels:>6}")
+                  f"trans={r.gold_row_trans:>3} hud={r.hud_match:>4.2f} "
+                  f"choice={r.choice_pixels:>6}")
             if not ok:
                 failures.append(path)
 

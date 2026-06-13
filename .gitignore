@@ -8,6 +8,11 @@ flik-captures/
 *.jpg
 *.jpeg
 
+# ...except the shipped detection template (the top-left "Playing" HUD glyph,
+# no account data) — flik needs it at runtime.
+!flik/assets/
+!flik/assets/*.png
+
 # Environment / secrets
 .env
 .env.*

@@ -1,23 +1,30 @@
 """
 Dialogue detection.
 
-The golden speaker-name bar in the bottom-center band is the NECESSARY signal:
-every real dialogue screen — plain lines AND in-dialogue choice screens — shows
-it. So it is the gate.
+Two conditions must BOTH hold to call it dialogue:
 
-  1. Gold speaker-name text in the bottom-center band  -> the gate (name_hit).
-  2. Bright reply-choice text on the right             -> informational only.
+  1. A gold speaker-name TEXT line in the bottom-center band (name_hit) -- enough
+     gold, shaped like a thin horizontal line of letter-strokes (not a solid
+     flood or vertically-scattered scenery).
+  2. The "|| Playing" dialogue HUD bar in the top-left (hud_hit) -- Genshin only
+     shows this during dialogue/cutscenes; free roam shows the minimap + party
+     list instead.
 
-The choice signal alone is NOT trusted, because bright text on the right also
-appears on things flik must ignore: world-interaction F-prompts ("Enter
-Sanctuary..."), the party-member list during free roam, and full-screen
-readable lore documents (which can only be closed with the ✕, not F). All of
-those lack the bottom gold name, so gating on name_hit rejects them.
+Condition 2 is the decisive veto. Free roam can put real gold *into* the name
+band -- gilded NPC guards, a gold-patterned player outfit, golden scenery --
+which color and shape checks alone cannot reliably tell from gold *text*. But
+free roam never shows the "Playing" bar, so requiring it rejects those frames.
+
+A bright reply-choice signal on the right (choice_hit) is computed for
+telemetry only; it never triggers on its own (world F-prompts, the party list,
+and lore documents all have bright right-side text but are not dialogue).
 """
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
+from functools import lru_cache
 
 import cv2
 import numpy as np
@@ -35,8 +42,10 @@ class DetectResult:
     gold_band: float        # height-fraction of the dense gold band (debug)
     gold_components: int    # number of gold blobs >= min area (debug)
     gold_row_trans: int     # max gold->dark transitions in any row (debug)
+    hud_match: float        # "|| Playing" bar template score 0..1 (debug)
     name_hit: bool
     choice_hit: bool
+    hud_hit: bool
 
 
 def _count_in_hsv_range(bgr_roi: np.ndarray, lower, upper) -> int:
@@ -82,6 +91,40 @@ def _max_row_transitions(mask: np.ndarray) -> int:
     return int(trans.max()) if trans.size else 0
 
 
+@lru_cache(maxsize=4)
+def _load_template(path: str) -> np.ndarray | None:
+    """Load the grayscale '|| Playing' HUD template once (cached)."""
+    tmpl = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+    return tmpl
+
+
+def _hud_match(frame: np.ndarray, cap: ScreenCapture, cfg: Config) -> float:
+    """Best normalized-correlation score for the '|| Playing' control bar in
+    the top-left HUD region. The template was captured at 1080p, so it is
+    rescaled to the current frame width -- this keeps the check working across
+    resolutions. Returns 0..1; ~0 when the bar is absent (free roam)."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    tmpl = _load_template(os.path.join(here, cfg.hud_template_file))
+    if tmpl is None:
+        return 0.0
+
+    win = cap.crop(frame, cfg.hud_roi)
+    if win.ndim == 3:
+        win = cv2.cvtColor(win, cv2.COLOR_BGR2GRAY)
+
+    # Rescale the 1080p-reference template to this frame's resolution.
+    scale = frame.shape[1] / 1920.0
+    th = max(1, int(round(tmpl.shape[0] * scale)))
+    tw = max(1, int(round(tmpl.shape[1] * scale)))
+    if scale != 1.0:
+        tmpl = cv2.resize(tmpl, (tw, th), interpolation=cv2.INTER_AREA)
+
+    if win.shape[0] < tmpl.shape[0] or win.shape[1] < tmpl.shape[1]:
+        return 0.0
+    res = cv2.matchTemplate(win, tmpl, cv2.TM_CCOEFF_NORMED)
+    return float(res.max())
+
+
 def detect(frame: np.ndarray, cap: ScreenCapture, cfg: Config) -> DetectResult:
     name_crop = cap.crop(frame, cfg.name_roi)
     choice_crop = cap.crop(frame, cfg.choice_roi)
@@ -116,10 +159,16 @@ def detect(frame: np.ndarray, cap: ScreenCapture, cfg: Config) -> DetectResult:
     )
     choice_hit = choice >= cfg.choice_pixel_min
 
-    # Gold speaker-name is the gate. Choice is kept for debugging/telemetry but
-    # never triggers on its own — that's what caused false-fires on world
-    # prompts, the party list, and lore documents.
-    dialogue = name_hit
+    # The dialogue HUD veto: Genshin only shows the "|| Playing" control bar
+    # (top-left) during dialogue/cutscenes, replacing the free-roam minimap +
+    # party list. This is what finally separates real gold *text* from gold
+    # *clothing* (e.g. gilded NPC guards) standing in the name band during free
+    # roam -- color and shape alone cannot.
+    hud_match = _hud_match(frame, cap, cfg)
+    hud_hit = hud_match >= cfg.hud_match_min
+
+    # Both must hold: a real gold speaker-name line AND the dialogue HUD.
+    dialogue = name_hit and hud_hit
 
     return DetectResult(
         dialogue=dialogue,
@@ -129,6 +178,8 @@ def detect(frame: np.ndarray, cap: ScreenCapture, cfg: Config) -> DetectResult:
         gold_band=gold_band,
         gold_components=gold_components,
         gold_row_trans=gold_row_trans,
+        hud_match=hud_match,
         name_hit=name_hit,
         choice_hit=choice_hit,
+        hud_hit=hud_hit,
     )

@@ -82,6 +82,19 @@ class Config:
     choice_white_hsv_upper: tuple = (179, 60, 255)
     choice_pixel_min: int = 1500
 
+    # --- Detection: dialogue HUD ("|| Playing" control bar, top-left) -----
+    # The single most reliable "we are actually in dialogue/a cutscene" signal:
+    # Genshin hides the minimap + party list during dialogue and shows the
+    # "|| Playing" control bar top-left instead. Free roam (even when standing
+    # at an NPC with an F-prompt, surrounded by gold-clad guards) always shows
+    # the minimap and never this bar. We template-match the shipped glyph in
+    # this region; a real match scores >=0.62, free roam <=0.22, so 0.42 splits
+    # them with wide margin. This vetoes gold *clothing* in the name band that
+    # color/shape checks alone cannot distinguish from gold *text*.
+    hud_roi: Roi = Roi(0.0, 0.0, 0.26, 0.09)
+    hud_template_file: str = "assets/playing_bar.png"  # relative to flik/
+    hud_match_min: float = 0.42
+
     # --- Misc -------------------------------------------------------------
     startup_delay_s: float = 3.0       # grace period to tab into the game
     # Keep flik running for a short tail after dialogue vanishes, to ride out

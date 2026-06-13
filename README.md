@@ -130,7 +130,10 @@ run.py           ▶️  entry point
 - [x] 🪟 **Focused-window guard** — won't spam F into other apps
 - [x] ⌨️ **Press loop** — clean 0.3s cadence with pause / quit hotkeys
 - [x] 🧠 **Stricter dialogue gating** — gold speaker-name is the gate; ignores world-interaction
-  prompts, the party list, and full-screen lore documents *(16/16 sample corpus passing)*
+  prompts, the party list, and full-screen lore documents
+- [x] 🛡️ **Dialogue-HUD veto** — also requires the top-left **"⏸ Playing"** bar (which Genshin only
+  shows during dialogue/cutscenes), so gold *clothing* and gold *scenery* in free roam can never
+  trigger a press *(17/17 sample corpus passing, including a real false-fire frame)*
 - [x] 🩺 **Safe observe mode** — `--dry-run` logs decisions live without ever pressing F
 - [ ] 🔤 **F-glyph template fallback** — *deferred*: every dialogue/choice we've seen carries a gold
   name, and a raw F-glyph match would re-trigger on world prompts. Revisit only if a gold-name-less
