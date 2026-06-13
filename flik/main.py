@@ -128,16 +128,22 @@ class Flik:
                               f"hud={result.hud_match:>4.2f} "
                               f"dark={result.dark_frac:>4.2f} "
                               f"cont={result.continue_hit!s:<5} "
+                              f"opts={result.option_rows:>2} "
+                              f"key={result.choice_key_hit!s:<5} "
                               f"choice={result.choice_pixels:>6}")
 
                     if result.dialogue:
                         self._last_dialogue_seen = now
 
-                    # Stay active through brief detection dropouts via a short
-                    # grace window, so a one-frame miss mid-conversation doesn't
-                    # stutter the F cadence.
+                    # Stay active through brief dropouts via the grace window --
+                    # BUT a >=2-option choice menu is an explicit "do not press"
+                    # signal, not a dropout, so it hard-stops immediately and
+                    # bypasses the grace tail (otherwise flik would coast on for
+                    # off_grace_s and tap F straight into the menu, picking an
+                    # option for the player).
                     dialogue_live = (
                         now - self._last_dialogue_seen <= self.cfg.off_grace_s
+                        and not result.many_options
                     )
 
                     if dialogue_live:
