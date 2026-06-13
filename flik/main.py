@@ -134,9 +134,15 @@ class Flik:
                     if result.dialogue:
                         self._last_dialogue_seen = now
 
-                    # Stay active through brief dropouts via the grace window.
+                    # Stay active through brief dropouts via the grace window --
+                    # BUT a >2-option choice menu is an explicit "do not press"
+                    # signal, not a dropout, so it hard-stops immediately and
+                    # bypasses the grace tail (otherwise flik would coast on for
+                    # off_grace_s and tap F straight into the menu, picking an
+                    # option for the player).
                     dialogue_live = (
                         now - self._last_dialogue_seen <= self.cfg.off_grace_s
+                        and not result.many_options
                     )
 
                     if dialogue_live:
