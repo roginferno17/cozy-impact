@@ -68,8 +68,7 @@ flik stays silent in the open world no matter how much gold is on screen.
 ## 🚀 Quick start
 
 > ⚠️ **Required in-game setting: turn conversation mode to _Auto_.**
-> In Genshin, open **Settings → Other → Conversation** (the dialogue auto-play option) and set it to
-> **Auto**. That's what makes the **"⏸ Playing"** bar appear during dialogue — the exact signal flik
+> That's what makes the **"⏸ Playing"** bar appear during dialogue — the exact signal flik
 > watches for. **If it's not on Auto, flik will not press F at all.** This is by design: the
 > auto-mode HUD is how flik knows it's safe to act.
 
