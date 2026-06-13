@@ -62,6 +62,11 @@ pip install -r requirements.txt
 python run.py
 ```
 
+> 🩺 **First time? Fly blind-safe.** Run `python run.py --dry-run` (alias `--observe`) to
+> watch flik's decisions live — it logs detection and *what it would press* but **never touches the
+> F key**. Add `-v` / `--verbose` for a live gold/fill/choice readout. Once it looks right, drop the
+> flag and let it press for real.
+
 | Key | Action |
 | :-: | :----- |
 | <kbd>F9</kbd>  | ⏯️ pause / resume |
@@ -110,7 +115,10 @@ run.py           ▶️  entry point
 - [x] ⌨️ **Press loop** — clean 0.5s cadence with pause / quit hotkeys
 - [x] 🧠 **Stricter dialogue gating** — gold speaker-name is the gate; ignores world-interaction
   prompts, the party list, and full-screen lore documents *(16/16 sample corpus passing)*
-- [ ] 🔤 **F-glyph template fallback** — for the rare choice screen with no subtitle
+- [x] 🩺 **Safe observe mode** — `--dry-run` logs decisions live without ever pressing F
+- [ ] 🔤 **F-glyph template fallback** — *deferred*: every dialogue/choice we've seen carries a gold
+  name, and a raw F-glyph match would re-trigger on world prompts. Revisit only if a gold-name-less
+  dialogue screen turns up.
 - [ ] 🎮 **Field-testing** across full quest chains
 
 ---

@@ -25,13 +25,17 @@ from .window import is_target_focused
 
 
 class Flik:
-    def __init__(self, cfg: Config = CONFIG) -> None:
+    def __init__(self, cfg: Config = CONFIG, *, dry_run: bool = False,
+                 verbose: bool = False) -> None:
         self.cfg = cfg
+        self.dry_run = dry_run      # observe only: never actually press F
+        self.verbose = verbose      # log detection telemetry every poll
         self.cap = ScreenCapture()
         self.enabled = True
         self.running = True
         self._last_press = 0.0
         self._last_dialogue_seen = 0.0
+        self._last_verbose = 0.0
 
     # --- hotkey handlers --------------------------------------------------
     def _toggle(self) -> None:
@@ -50,6 +54,8 @@ class Flik:
         print(f" target window : *{self.cfg.window_title_contains}*")
         print(f" key / interval: {self.cfg.skip_key.upper()} every "
               f"{self.cfg.press_interval_s}s")
+        if self.dry_run:
+            print(" MODE          : DRY-RUN (observe only, F is NEVER pressed)")
         print(f" F9  = pause/resume   F12 = quit")
         print(f" starting in {self.cfg.startup_delay_s:.0f}s - tab into the game...")
         print("=" * 56)
@@ -71,6 +77,13 @@ class Flik:
                     result = detect(frame, self.cap, self.cfg)
                     now = time.time()
 
+                    if self.verbose and now - self._last_verbose >= 0.5:
+                        self._last_verbose = now
+                        print(f"[flik] dialogue={result.dialogue!s:<5} "
+                              f"gold={result.gold_pixels:>5} "
+                              f"fill={result.gold_fill:>5.1%} "
+                              f"choice={result.choice_pixels:>6}")
+
                     if result.dialogue:
                         self._last_dialogue_seen = now
 
@@ -83,9 +96,14 @@ class Flik:
                         if not active:
                             active = True
                             tag = "choice" if result.choice_hit else "line"
-                            print(f"[flik] dialogue start ({tag}) -> flik ON")
+                            mode = " [dry-run]" if self.dry_run else ""
+                            print(f"[flik] dialogue start ({tag}) -> flik ON{mode}")
                         if now - self._last_press >= self.cfg.press_interval_s:
-                            press(self.cfg.skip_key)
+                            if self.dry_run:
+                                print("[flik] (dry-run) would press "
+                                      f"{self.cfg.skip_key.upper()}")
+                            else:
+                                press(self.cfg.skip_key)
                             self._last_press = now
                     elif active:
                         active = False
