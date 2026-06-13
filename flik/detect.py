@@ -18,6 +18,12 @@ free roam never shows the "Playing" bar, so requiring it rejects those frames.
 A bright reply-choice signal on the right (choice_hit) is computed for
 telemetry only; it never triggers on its own (world F-prompts, the party list,
 and lore documents all have bright right-side text but are not dialogue).
+
+A third, ADDITIVE trigger (continue_hit) handles the black "Click to continue"
+story interludes, which have neither the HUD bar nor a bottom speaker-name. It
+only fires when the whole screen is almost black AND a text-shaped gold prompt
+sits in the bottom-center band -- conditions that never occur in normal
+dialogue or free roam, so it leaves the gold-name + HUD path untouched.
 """
 
 from __future__ import annotations
@@ -43,9 +49,11 @@ class DetectResult:
     gold_components: int    # number of gold blobs >= min area (debug)
     gold_row_trans: int     # max gold->dark transitions in any row (debug)
     hud_match: float        # "|| Playing" bar template score 0..1 (debug)
+    dark_frac: float        # fraction of frame that is near-black (debug)
     name_hit: bool
     choice_hit: bool
     hud_hit: bool
+    continue_hit: bool      # near-black "Click to continue" interlude
 
 
 def _count_in_hsv_range(bgr_roi: np.ndarray, lower, upper) -> int:
@@ -125,6 +133,15 @@ def _hud_match(frame: np.ndarray, cap: ScreenCapture, cfg: Config) -> float:
     return float(res.max())
 
 
+def _dark_fraction(frame: np.ndarray, v_max: int) -> float:
+    """Fraction of the (downsampled) frame that is near-black. Story interludes
+    and loading screens are almost entirely black; normal dialogue and free
+    roam never are (measured max ~0.55)."""
+    small = frame[::4, ::4]
+    v = cv2.cvtColor(small, cv2.COLOR_BGR2HSV)[:, :, 2]
+    return float((v <= v_max).mean())
+
+
 def detect(frame: np.ndarray, cap: ScreenCapture, cfg: Config) -> DetectResult:
     name_crop = cap.crop(frame, cfg.name_roi)
     choice_crop = cap.crop(frame, cfg.choice_roi)
@@ -167,8 +184,30 @@ def detect(frame: np.ndarray, cap: ScreenCapture, cfg: Config) -> DetectResult:
     hud_match = _hud_match(frame, cap, cfg)
     hud_hit = hud_match >= cfg.hud_match_min
 
-    # Both must hold: a real gold speaker-name line AND the dialogue HUD.
-    dialogue = name_hit and hud_hit
+    # Additive third trigger: the near-black "Click to continue" story
+    # interlude. Only considered when the WHOLE screen is almost black -- which
+    # never happens in normal dialogue/free roam -- so it cannot affect the
+    # gold-name + HUD path above. Requires a text-shaped gold prompt in the
+    # bottom-center band (lore documents are also black but have none there).
+    dark_frac = _dark_fraction(frame, cfg.dark_v_max)
+    if dark_frac >= cfg.dark_screen_min:
+        cont_crop = cap.crop(frame, cfg.continue_roi)
+        cont_gold = _count_in_hsv_range(
+            cont_crop, cfg.continue_gold_hsv_lower, cfg.continue_gold_hsv_upper
+        )
+        cont_mask = _gold_mask(
+            cont_crop, cfg.continue_gold_hsv_lower, cfg.continue_gold_hsv_upper
+        )
+        cont_trans = _max_row_transitions(cont_mask)
+        continue_hit = (
+            cont_gold >= cfg.continue_gold_min
+            and cont_trans >= cfg.continue_min_row_transitions
+        )
+    else:
+        continue_hit = False
+
+    # Real dialogue (gold name + HUD) OR a "Click to continue" interlude.
+    dialogue = (name_hit and hud_hit) or continue_hit
 
     return DetectResult(
         dialogue=dialogue,
@@ -179,7 +218,9 @@ def detect(frame: np.ndarray, cap: ScreenCapture, cfg: Config) -> DetectResult:
         gold_components=gold_components,
         gold_row_trans=gold_row_trans,
         hud_match=hud_match,
+        dark_frac=dark_frac,
         name_hit=name_hit,
         choice_hit=choice_hit,
         hud_hit=hud_hit,
+        continue_hit=continue_hit,
     )

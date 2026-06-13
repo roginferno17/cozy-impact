@@ -100,6 +100,24 @@ class Config:
     hud_template_file: str = "assets/playing_bar.png"  # relative to flik/
     hud_match_min: float = 0.42
 
+    # --- Detection: "Click to continue" interlude (near-black narration) --
+    # An ADDITIVE third trigger for the black story-interlude screens: white
+    # narration text + a gold "Click to continue" prompt, with NO "Playing"
+    # bar and NO bottom speaker-name (so the two checks above miss them on
+    # purpose). It is gated behind "the screen is almost entirely black", which
+    # NEVER happens during normal dialogue or free roam (measured max ~0.55),
+    # so this can't disturb the existing detection. Lore documents are also
+    # mostly black but carry no gold prompt in this band, so they stay rejected.
+    continue_roi: Roi = Roi(0.34, 0.85, 0.66, 0.96)   # bottom-center prompt band
+    dark_screen_min: float = 0.85       # >=85% near-black -> interlude/loading
+    dark_v_max: int = 50                # a pixel counts as "dark" at V <= this
+    # Slightly wider gold than the name band (the amber prompt), applied ONLY
+    # here on an already-confirmed black screen -- keeps the name gate untouched.
+    continue_gold_hsv_lower: tuple = (12, 80, 110)
+    continue_gold_hsv_upper: tuple = (35, 255, 255)
+    continue_gold_min: int = 250
+    continue_min_row_transitions: int = 6
+
     # --- Misc -------------------------------------------------------------
     startup_delay_s: float = 3.0       # grace period to tab into the game
     # Keep flik running for a short tail after dialogue vanishes, to ride out

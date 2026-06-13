@@ -55,9 +55,11 @@ def main() -> None:
           f"(threshold {CONFIG.choice_pixel_min}) -> hit={result.choice_hit}")
     print(f"HUD '|| Playing' match   : {result.hud_match:>6.2f}  "
           f"(min {CONFIG.hud_match_min:.2f}) -> hit={result.hud_hit}")
+    print(f"dark-screen fraction     : {result.dark_frac:>6.2f}  "
+          f"(min {CONFIG.dark_screen_min:.2f}) -> continue={result.continue_hit}")
     print("-" * 48)
     print(f"DECISION: dialogue = {result.dialogue}  "
-          f"(needs name_hit AND hud_hit)")
+          f"((name_hit AND hud_hit) OR continue_hit)")
     print("-" * 48)
 
     # annotate
@@ -67,6 +69,7 @@ def main() -> None:
         (CONFIG.name_roi, (0, 215, 255), "name"),
         (CONFIG.choice_roi, (0, 255, 0), "choice"),
         (CONFIG.hud_roi, (255, 128, 0), "hud"),
+        (CONFIG.continue_roi, (255, 0, 255), "continue"),
     ):
         x1, y1, x2, y2 = _roi_to_px(roi, w, h)
         cv2.rectangle(out, (x1, y1), (x2, y2), color, 2)

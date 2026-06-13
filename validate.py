@@ -64,6 +64,7 @@ def main() -> int:
                   f"gold={r.gold_pixels:>5} fill={r.gold_fill:>5.1%} "
                   f"band={r.gold_band:>5.1%} comps={r.gold_components:>3} "
                   f"trans={r.gold_row_trans:>3} hud={r.hud_match:>4.2f} "
+                  f"dark={r.dark_frac:>4.2f} cont={r.continue_hit!s:<5} "
                   f"choice={r.choice_pixels:>6}")
             if not ok:
                 failures.append(path)

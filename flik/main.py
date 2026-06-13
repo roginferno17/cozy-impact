@@ -126,6 +126,8 @@ class Flik:
                               f"comps={result.gold_components:>3} "
                               f"trans={result.gold_row_trans:>3} "
                               f"hud={result.hud_match:>4.2f} "
+                              f"dark={result.dark_frac:>4.2f} "
+                              f"cont={result.continue_hit!s:<5} "
                               f"choice={result.choice_pixels:>6}")
 
                     if result.dialogue:
@@ -139,7 +141,8 @@ class Flik:
                     if dialogue_live:
                         if not active:
                             active = True
-                            tag = "choice" if result.choice_hit else "line"
+                            tag = ("continue" if result.continue_hit
+                                   else "choice" if result.choice_hit else "line")
                             mode = " [dry-run]" if self.dry_run else ""
                             print(f"[flik] dialogue start ({tag}) -> flik ON{mode}")
                             if self.capture:

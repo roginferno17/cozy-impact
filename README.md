@@ -142,6 +142,8 @@ run.py           ▶️  entry point
 - [x] 🟡 **Gold-name detector** — text-shaped gold in the bottom band (left-aligned *and* centered)
 - [x] ⏸️ **"Playing" HUD veto** — requires the dialogue-only top-left bar, so gold clothing and gold
   scenery in free roam can never trigger a press
+- [x] 🌑 **"Click to continue" interludes** — also taps through the near-black story-transition
+  screens (gold prompt on black), gated so tightly it can't fire during normal play
 - [x] 🪟 **Focused-window guard** — won't spam F into other apps
 - [x] ⌨️ **Press loop** — clean 0.3s cadence with pause / quit hotkeys
 - [x] 🩺 **Safe observe mode** — `--dry-run` logs decisions live without ever pressing F
