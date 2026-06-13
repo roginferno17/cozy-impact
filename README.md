@@ -53,7 +53,7 @@ To decide "is this *really* dialogue?", it checks **two things that must BOTH be
 | # | Signal | Why it matters |
 | :-: | :----- | :------------- |
 | ① | 🟡 **Gold speaker-name** | The warm-gold name line at the bottom, shaped like *text* (many letter-strokes), not a solid gold blob. |
-| ② | ⏸️ **"Playing" HUD bar** | Genshin only shows this top-left bar **during dialogue/cutscenes** — free roam shows the minimap + party list instead. |
+| ② | ⏸️ **"Playing" HUD bar** | Genshin shows this top-left bar during dialogue/cutscenes **when conversation mode is set to _Auto_** — free roam shows the minimap + party list instead. *(Auto mode is required — see Quick start.)* |
 
 That second check is the secret sauce. 🔑 Plenty of things in the open world are gold — gilded NPC
 guards, a gold-trimmed outfit, sunlight on water — and color alone can't always tell them apart from
@@ -66,6 +66,12 @@ flik stays silent in the open world no matter how much gold is on screen.
 ---
 
 ## 🚀 Quick start
+
+> ⚠️ **Required in-game setting: turn conversation mode to _Auto_.**
+> In Genshin, open **Settings → Other → Conversation** (the dialogue auto-play option) and set it to
+> **Auto**. That's what makes the **"⏸ Playing"** bar appear during dialogue — the exact signal flik
+> watches for. **If it's not on Auto, flik will not press F at all.** This is by design: the
+> auto-mode HUD is how flik knows it's safe to act.
 
 ### 🖱️ The easy way (just double-click)
 
