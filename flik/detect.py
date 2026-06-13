@@ -228,6 +228,33 @@ def _count_option_pills(frame: np.ndarray, cap, cfg) -> int:
     return count
 
 
+def _has_continue_diamond(mask: np.ndarray, cfg, scale: float) -> bool:
+    """True if the bottom-center gold mask holds the amber 'press to continue'
+    diamond: a single compact, roughly-square, horizontally-centered gold blob.
+    This is the advance prompt on near-black narration interludes whose story
+    text is WHITE (so the gold-text continue path misses them). Plain loading /
+    black screens carry no gold in this band, so this stays rejected there."""
+    if mask.size == 0:
+        return False
+    rw = mask.shape[1]
+    smin, smax = cfg.continue_diamond_size_min * scale, cfg.continue_diamond_size_max * scale
+    amin = cfg.continue_diamond_min_area * scale * scale
+    num, _, stats, _ = cv2.connectedComponentsWithStats(mask, 8)
+    for i in range(1, num):
+        x, y, w, h, area = (stats[i, 0], stats[i, 1], stats[i, 2],
+                            stats[i, 3], stats[i, 4])
+        if area < amin:
+            continue
+        if not (smin <= w <= smax and smin <= h <= smax):
+            continue
+        if not (cfg.continue_diamond_aspect_lo <= w / float(h) <= cfg.continue_diamond_aspect_hi):
+            continue
+        cx = (x + w / 2) / rw
+        if 0.25 <= cx <= 0.75:
+            return True
+    return False
+
+
 def detect(frame: np.ndarray, cap: ScreenCapture, cfg: Config) -> DetectResult:
     name_crop = cap.crop(frame, cfg.name_roi)
     choice_crop = cap.crop(frame, cfg.choice_roi)
@@ -285,10 +312,15 @@ def detect(frame: np.ndarray, cap: ScreenCapture, cfg: Config) -> DetectResult:
             cont_crop, cfg.continue_gold_hsv_lower, cfg.continue_gold_hsv_upper
         )
         cont_trans = _max_row_transitions(cont_mask)
-        continue_hit = (
+        # Two accepted continue prompts: a gold TEXT prompt (many gold px, text-
+        # shaped) OR the compact amber DIAMOND glyph (white-narration interludes).
+        scale = frame.shape[1] / 1920.0
+        text_prompt = (
             cont_gold >= cfg.continue_gold_min
             and cont_trans >= cfg.continue_min_row_transitions
         )
+        diamond_prompt = _has_continue_diamond(cont_mask, cfg, scale)
+        continue_hit = text_prompt or diamond_prompt
     else:
         continue_hit = False
 

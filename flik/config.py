@@ -124,6 +124,16 @@ class Config:
     continue_gold_hsv_upper: tuple = (35, 255, 255)
     continue_gold_min: int = 250
     continue_min_row_transitions: int = 6
+    # Some near-black narration interludes show WHITE story text (not gold) plus
+    # a small amber "press to continue" DIAMOND at bottom-center -- the gold-text
+    # path above misses them (too little gold, not text-shaped). So we also
+    # accept a compact, roughly-square, horizontally-centered gold blob: the
+    # diamond glyph. Safe because plain loading/black screens carry no gold here.
+    continue_diamond_min_area: int = 60     # the diamond is a small solid glyph
+    continue_diamond_size_min: int = 12     # bbox side, px @1080p (auto-scaled)
+    continue_diamond_size_max: int = 50
+    continue_diamond_aspect_lo: float = 0.6  # roughly square
+    continue_diamond_aspect_hi: float = 1.6
 
     # --- Veto: 2+ selectable options (a real choice the player must make) ----
     # When the dialogue shows two or more selectable options (a branching reply
