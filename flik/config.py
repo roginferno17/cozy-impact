@@ -40,7 +40,12 @@ class Config:
 
     # --- Detection: gold speaker-name band (bottom-center) ----------------
     # The gold speaker name appears here during dialogue lines.
-    name_roi: Roi = Roi(0.28, 0.77, 0.72, 0.85)
+    # Bottom band where the gold speaker-name sits. Genshin LEFT-aligns the
+    # name for long/multi-line lines (name starts ~x0.16) but centers it for
+    # short ones, so the band spans from the left margin across the centre.
+    # Widening leftward is safe now that the "|| Playing" HUD veto (below)
+    # guards against free-roam gold; the band alone no longer has to be picky.
+    name_roi: Roi = Roi(0.14, 0.77, 0.72, 0.87)
     # Genshin name-gold in OpenCV HSV (H 0-179), measured from real dialogue:
     # hue tightly clusters 15-30 and saturation stays high (>=~85). Warm
     # scenery (pale sun glow, oranges) tends to fall outside this tighter band.
