@@ -125,32 +125,12 @@ class Config:
     continue_gold_min: int = 250
     continue_min_row_transitions: int = 6
 
-    # --- Veto: 3+ selectable options (a real choice the player must make) ----
-    # An NPC/service menu (e.g. Katheryne) shows more than two option pills;
-    # pressing F would blindly pick one. So when >2 option pills are present,
-    # suppress firing. Pills are detected by GEOMETRY: each option is a dark
-    # translucent rounded box that is flush to the LEFT of this region (a fixed
-    # left margin where the icon sits) and extends RIGHT by a variable amount
-    # depending on the text length -- "See you." is short, "Claim Daily
-    # Commission Reward" is long. So we key on the left cap/icon band being
-    # dark pill background, NOT a right-edge alignment (an earlier version
-    # tested the right edge and missed every pill, since they never reach it).
-    # This survives the pills' transparency (they read dark even over a bright
-    # wooden counter) and text wrapping (one box = one option even across two
-    # lines). Tuned so every real-dialogue frame reads <=2 pills while a 3- or
-    # 6-option menu reads >=3.
-    options_roi: Roi = Roi(0.66, 0.16, 0.99, 0.82)
-    option_pill_v_max: int = 120          # pill bg is dark-ish
-    option_pill_s_max: int = 95           # ...and desaturated
-    option_pill_left_frac: float = 0.13   # inspect the left cap/icon band only
-    option_pill_left_min: float = 0.55    # that left band is >=55% pill bg
-    option_text_v_min: int = 200          # bright text sitting on the pill
-    option_text_frac_lo: float = 0.015    # sparse: real text, not a solid blob
-    option_text_frac_hi: float = 0.45
-    option_text_min_transitions: int = 4  # bright<->dark flips => letters
-    option_gap_close: int = 11            # bridge wrapped lines within one pill
-    option_min_band_h: int = 10           # a pill box is at least this tall (px)
-    option_veto_count: int = 3            # >2 options -> do not fire
+    # NOTE: flik does NOT detect multi-option choice menus. On a single frame
+    # the semi-transparent option pills are visually indistinguishable from busy
+    # scenery -- every pixel heuristic we tried either missed real menus or
+    # wrongly silenced flik on real dialogue with a cluttered background. So flik
+    # keeps pressing through dialogue; when YOU need to pick an option, pause
+    # flik with F9. See the README.
 
     # --- Misc -------------------------------------------------------------
     startup_delay_s: float = 3.0       # grace period to tab into the game

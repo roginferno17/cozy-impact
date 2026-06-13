@@ -57,11 +57,9 @@ def main() -> None:
           f"(min {CONFIG.hud_match_min:.2f}) -> hit={result.hud_hit}")
     print(f"dark-screen fraction     : {result.dark_frac:>6.2f}  "
           f"(min {CONFIG.dark_screen_min:.2f}) -> continue={result.continue_hit}")
-    print(f"option pills (right)     : {result.option_rows:>6}  "
-          f"(>={CONFIG.option_veto_count} vetoes) -> many_options={result.many_options}")
     print("-" * 48)
     print(f"DECISION: dialogue = {result.dialogue}  "
-          f"((name_hit AND hud_hit) OR continue_hit) AND NOT many_options")
+          f"((name_hit AND hud_hit) OR continue_hit)")
     print("-" * 48)
 
     # annotate
@@ -72,7 +70,6 @@ def main() -> None:
         (CONFIG.choice_roi, (0, 255, 0), "choice"),
         (CONFIG.hud_roi, (255, 128, 0), "hud"),
         (CONFIG.continue_roi, (255, 0, 255), "continue"),
-        (CONFIG.options_roi, (0, 0, 255), "options"),
     ):
         x1, y1, x2, y2 = _roi_to_px(roi, w, h)
         cv2.rectangle(out, (x1, y1), (x2, y2), color, 2)

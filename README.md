@@ -159,6 +159,12 @@ run.py           ▶️  entry point
 
 ## ⚖️ Honest limits
 
+- **Doesn't pick dialogue options for you.** When an NPC shows a multi-option
+  choice (a service menu like Katheryne, or a branching reply), flik can't
+  reliably tell those semi-transparent option pills apart from busy scenery on a
+  single frame — so it doesn't try. It just keeps pressing through normal
+  dialogue. **When you need to choose, tap <kbd>F9</kbd> to pause flik**, pick
+  your option, then <kbd>F9</kbd> again to resume. 🕹️
 - **Foreground only.** No background input injection — that's deliberate, it's the part anti-cheat
   actually cares about. Works while Genshin is focused; that's it.
 - **Input-only**, no process/memory access — same lane as a hardware macro.

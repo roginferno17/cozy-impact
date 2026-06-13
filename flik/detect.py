@@ -25,10 +25,12 @@ only fires when the whole screen is almost black AND a text-shaped gold prompt
 sits in the bottom-center band -- conditions that never occur in normal
 dialogue or free roam, so it leaves the gold-name + HUD path untouched.
 
-Finally a VETO (many_options) suppresses firing whenever more than two
-right-aligned option pills are shown -- a real branching choice the player must
-make (e.g. an NPC service menu). Pills are counted geometrically so the veto is
-robust to their transparency and to text wrapping.
+NOTE: flik does NOT try to detect multi-option choice menus. Those option
+pills are semi-transparent and, on a single frame, are visually indistinguish-
+able from busy scenery -- every pixel heuristic we tried either missed real
+menus or wrongly silenced flik on real dialogue with a cluttered background.
+So flik just keeps pressing through dialogue; when YOU need to pick an option,
+pause flik with F9. See the README.
 """
 
 from __future__ import annotations
@@ -59,8 +61,6 @@ class DetectResult:
     choice_hit: bool
     hud_hit: bool
     continue_hit: bool      # near-black "Click to continue" interlude
-    option_rows: int        # count of right-aligned option pills (debug)
-    many_options: bool      # >2 options -> veto (player must choose)
 
 
 def _count_in_hsv_range(bgr_roi: np.ndarray, lower, upper) -> int:
@@ -149,46 +149,6 @@ def _dark_fraction(frame: np.ndarray, v_max: int) -> float:
     return float((v <= v_max).mean())
 
 
-def _count_option_pills(frame: np.ndarray, cap, cfg) -> int:
-    """Count dialogue option pills. Each option is a dark translucent rounded
-    box flush to the LEFT of this region (a fixed left margin holding the
-    icon), extending right by a variable amount set by the text length. So we
-    detect a pill row by its left cap/icon band reading as pill background,
-    plus sparse text-shaped bright pixels on top. Detection is geometric, so
-    it survives the pills' semi-transparency (they stay dark even over a bright
-    wooden counter) and text wrapping (one box = one option even across two
-    lines). Used to veto firing when a real >2-option choice menu is shown."""
-    roi = cap.crop(frame, cfg.options_roi)
-    rw = roi.shape[1]
-    if rw < 10 or roi.shape[0] < cfg.option_min_band_h:
-        return 0
-    hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
-    S, V = hsv[:, :, 1], hsv[:, :, 2]
-    pill = (V < cfg.option_pill_v_max) & (S < cfg.option_pill_s_max)
-    lw = max(1, int(cfg.option_pill_left_frac * rw))
-    left_pill = pill[:, :lw].mean(axis=1)        # left cap/icon band is pill bg
-    bm = (V > cfg.option_text_v_min).astype(np.uint8)
-    bf = bm.mean(axis=1)
-    tr = (np.diff(bm, axis=1) == 1).sum(axis=1)
-    sig = ((left_pill > cfg.option_pill_left_min)
-           & (bf > cfg.option_text_frac_lo) & (bf < cfg.option_text_frac_hi)
-           & (tr >= cfg.option_text_min_transitions)).astype(np.uint8)
-    if cfg.option_gap_close > 1:
-        kernel = np.ones(cfg.option_gap_close, np.uint8)
-        sig = (np.convolve(sig, kernel, "same") > 0).astype(np.uint8)
-    count = run = 0
-    for v in sig:
-        if v:
-            run += 1
-        else:
-            if run >= cfg.option_min_band_h:
-                count += 1
-            run = 0
-    if run >= cfg.option_min_band_h:
-        count += 1
-    return count
-
-
 def detect(frame: np.ndarray, cap: ScreenCapture, cfg: Config) -> DetectResult:
     name_crop = cap.crop(frame, cfg.name_roi)
     choice_crop = cap.crop(frame, cfg.choice_roi)
@@ -256,13 +216,6 @@ def detect(frame: np.ndarray, cap: ScreenCapture, cfg: Config) -> DetectResult:
     # Real dialogue (gold name + HUD) OR a "Click to continue" interlude.
     dialogue = (name_hit and hud_hit) or continue_hit
 
-    # Veto: if the screen shows >2 selectable option pills, this is a real
-    # choice the player must make -- never auto-press through it.
-    option_rows = _count_option_pills(frame, cap, cfg)
-    many_options = option_rows >= cfg.option_veto_count
-    if many_options:
-        dialogue = False
-
     return DetectResult(
         dialogue=dialogue,
         gold_pixels=gold,
@@ -277,6 +230,4 @@ def detect(frame: np.ndarray, cap: ScreenCapture, cfg: Config) -> DetectResult:
         choice_hit=choice_hit,
         hud_hit=hud_hit,
         continue_hit=continue_hit,
-        option_rows=option_rows,
-        many_options=many_options,
     )
