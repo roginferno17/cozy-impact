@@ -127,23 +127,28 @@ class Config:
 
     # --- Veto: 3+ selectable options (a real choice the player must make) ----
     # An NPC/service menu (e.g. Katheryne) shows more than two option pills;
-    # pressing F would blindly pick one. So when >2 right-aligned option pills
-    # are present, suppress firing. Pills are detected by GEOMETRY -- a dark
-    # translucent box flush to the right screen edge carrying sparse, text-
-    # shaped bright pixels -- which survives the pills' transparency and text
-    # wrapping (one box = one option even if its text spans two lines). Tuned
-    # so every real-dialogue frame (incl. a bright character on the right side)
-    # reads <=2 pills, while a six-option menu reads 6.
+    # pressing F would blindly pick one. So when >2 option pills are present,
+    # suppress firing. Pills are detected by GEOMETRY: each option is a dark
+    # translucent rounded box that is flush to the LEFT of this region (a fixed
+    # left margin where the icon sits) and extends RIGHT by a variable amount
+    # depending on the text length -- "See you." is short, "Claim Daily
+    # Commission Reward" is long. So we key on the left cap/icon band being
+    # dark pill background, NOT a right-edge alignment (an earlier version
+    # tested the right edge and missed every pill, since they never reach it).
+    # This survives the pills' transparency (they read dark even over a bright
+    # wooden counter) and text wrapping (one box = one option even across two
+    # lines). Tuned so every real-dialogue frame reads <=2 pills while a 3- or
+    # 6-option menu reads >=3.
     options_roi: Roi = Roi(0.66, 0.16, 0.99, 0.82)
     option_pill_v_max: int = 120          # pill bg is dark-ish
     option_pill_s_max: int = 95           # ...and desaturated
-    option_pill_min_fill: float = 0.30    # row is >=30% pill bg
-    option_right_edge_min: float = 0.55   # far-right 10% is pill (flush to edge)
+    option_pill_left_frac: float = 0.13   # inspect the left cap/icon band only
+    option_pill_left_min: float = 0.55    # that left band is >=55% pill bg
     option_text_v_min: int = 200          # bright text sitting on the pill
-    option_text_frac_lo: float = 0.008    # sparse: real text, not a solid blob
-    option_text_frac_hi: float = 0.25
+    option_text_frac_lo: float = 0.015    # sparse: real text, not a solid blob
+    option_text_frac_hi: float = 0.45
     option_text_min_transitions: int = 4  # bright<->dark flips => letters
-    option_gap_close: int = 21            # bridge wrapped lines within one pill
+    option_gap_close: int = 11            # bridge wrapped lines within one pill
     option_min_band_h: int = 10           # a pill box is at least this tall (px)
     option_veto_count: int = 3            # >2 options -> do not fire
 

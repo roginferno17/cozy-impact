@@ -150,10 +150,13 @@ def _dark_fraction(frame: np.ndarray, v_max: int) -> float:
 
 
 def _count_option_pills(frame: np.ndarray, cap, cfg) -> int:
-    """Count right-aligned dialogue option pills. A pill row is a dark
-    translucent box flush to the right screen edge carrying sparse, text-shaped
-    bright pixels. Detection is geometric, so it survives the pills' semi-
-    transparency and text wrapping (one box = one option even across two
+    """Count dialogue option pills. Each option is a dark translucent rounded
+    box flush to the LEFT of this region (a fixed left margin holding the
+    icon), extending right by a variable amount set by the text length. So we
+    detect a pill row by its left cap/icon band reading as pill background,
+    plus sparse text-shaped bright pixels on top. Detection is geometric, so
+    it survives the pills' semi-transparency (they stay dark even over a bright
+    wooden counter) and text wrapping (one box = one option even across two
     lines). Used to veto firing when a real >2-option choice menu is shown."""
     roi = cap.crop(frame, cfg.options_roi)
     rw = roi.shape[1]
@@ -162,13 +165,12 @@ def _count_option_pills(frame: np.ndarray, cap, cfg) -> int:
     hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
     S, V = hsv[:, :, 1], hsv[:, :, 2]
     pill = (V < cfg.option_pill_v_max) & (S < cfg.option_pill_s_max)
-    pill_frac = pill.mean(axis=1)
-    far_right = pill[:, int(0.90 * rw):].mean(axis=1)
+    lw = max(1, int(cfg.option_pill_left_frac * rw))
+    left_pill = pill[:, :lw].mean(axis=1)        # left cap/icon band is pill bg
     bm = (V > cfg.option_text_v_min).astype(np.uint8)
     bf = bm.mean(axis=1)
     tr = (np.diff(bm, axis=1) == 1).sum(axis=1)
-    sig = ((pill_frac > cfg.option_pill_min_fill)
-           & (far_right > cfg.option_right_edge_min)
+    sig = ((left_pill > cfg.option_pill_left_min)
            & (bf > cfg.option_text_frac_lo) & (bf < cfg.option_text_frac_hi)
            & (tr >= cfg.option_text_min_transitions)).astype(np.uint8)
     if cfg.option_gap_close > 1:
