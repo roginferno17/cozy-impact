@@ -159,6 +159,11 @@ run.py           ▶️  entry point
 
 ## ⚖️ Honest limits
 
+- **It won't pick options for you — but it also won't wait.** flik presses through
+  dialogue, so if a **choice menu** comes up (a Katheryne service menu, a branching
+  reply), it'll happily tap **F** and pick one. When you actually need to choose,
+  just tap <kbd>F9</kbd> to pause flik, make your pick, then tap <kbd>F9</kbd> again
+  to resume. 🕹️
 - **Foreground only.** No background input injection — that's deliberate, it's the part anti-cheat
   actually cares about. Works while Genshin is focused; that's it.
 - **Input-only**, no process/memory access — same lane as a hardware macro.
