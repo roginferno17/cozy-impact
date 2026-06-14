@@ -135,67 +135,11 @@ class Config:
     continue_diamond_aspect_lo: float = 0.6  # roughly square
     continue_diamond_aspect_hi: float = 1.6
 
-    # --- Veto: 2+ selectable options (a real choice the player must make) ----
-    # When the dialogue shows two or more selectable options (a branching reply
-    # or an NPC service menu like Katheryne), pressing F would blindly pick one.
-    # So flik suppresses firing whenever it sees a choice menu with >=2 options,
-    # letting the player choose. (A single option, e.g. a lone "Yes?", is still
-    # pressed through -- it just advances the conversation.)
-    #
-    # The veto requires TWO independent signals to BOTH hold, because either one
-    # alone false-fires:
-    #   (A) the white "F" key-cap prompt -- a small, opaque, near-white rounded
-    #       square with a dark "F" letter, shown beside the highlighted option.
-    #       It appears ONLY when a selectable choice is on screen, never during
-    #       monologue, so it cleanly separates "a choice exists" from plain talk.
-    #   (B) >=2 stacked option pills -- counted by their dark, left-flush
-    #       icon/cap band (each option is a translucent box with a fixed left
-    #       margin holding its icon). This counts how many options there are.
-    # (A) alone can be faked by a bright square in scenery; (B) alone can be
-    # faked by a dark-clothed character on the right side of a monologue. Both
-    # together are robust: a monologue lacks the key-cap; a 1-option prompt has
-    # the key-cap but only one pill.
-
-    # (A) the "F" key-cap prompt
-    choice_key_roi: Roi = Roi(0.56, 0.28, 0.80, 0.84)  # right-center search band
-    choice_key_white_v_min: int = 195     # key-cap fill is near-white (high V)
-    choice_key_white_s_max: int = 45      # ...and desaturated (low S)
-    choice_key_size_min: int = 26         # key-cap side length (px @1080p)
-    choice_key_size_max: int = 60
-    choice_key_aspect_lo: float = 0.7     # roughly square
-    choice_key_aspect_hi: float = 1.5
-    choice_key_extent_min: float = 0.6    # solid fill (area / bbox area)
-    choice_key_dark_lo: float = 0.05      # a dark "F" letter sits inside...
-    choice_key_dark_hi: float = 0.5       # ...but it's not a mostly-dark box
-
-    # (B) the option pills
-    options_roi: Roi = Roi(0.66, 0.16, 0.99, 0.82)
-    option_pill_v_max: int = 120          # pill bg is dark-ish
-    option_pill_s_max: int = 95           # ...and desaturated
-    option_pill_left_frac: float = 0.13   # inspect the left cap/icon band only
-    option_pill_left_min: float = 0.55    # that left band is >=55% pill bg
-    option_text_v_min: int = 200          # bright text sitting on the pill
-    option_text_frac_lo: float = 0.015    # sparse: real text, not a solid blob
-    option_text_frac_hi: float = 0.45
-    option_text_min_transitions: int = 4  # bright<->dark flips => letters
-    option_gap_close: int = 11            # bridge wrapped lines within one pill
-    option_min_band_h: int = 10           # a pill box is at least this tall (px)
-    option_veto_count: int = 2            # >=2 options -> do not fire
-
     # --- Misc -------------------------------------------------------------
     startup_delay_s: float = 3.0       # grace period to tab into the game
     # Keep flik running for a short tail after dialogue vanishes, to ride out
     # 1-frame detection dropouts mid-conversation (animation transitions etc).
     off_grace_s: float = 0.6
-    # Choice-menu veto LATCH. The option pills + F key-cap animate in (pills
-    # slide from the right, the key-cap fades in), so for a frame or two during
-    # that transition the veto signal can momentarily drop below threshold.
-    # Without a latch, flik would slip a press into that gap and pick an option.
-    # Once a >=2-option menu is seen we therefore HOLD the stop for this long,
-    # refreshed on every menu frame -- so a brief flicker can't release it. The
-    # menu stays on screen until the player picks, so this only delays flik's
-    # resume by ~this much after a choice is made.
-    veto_hold_s: float = 1.0
 
 
 CONFIG = Config()

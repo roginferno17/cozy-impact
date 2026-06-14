@@ -159,14 +159,6 @@ run.py           ▶️  entry point
 
 ## ⚖️ Honest limits
 
-- **Auto-stops on real choices, doesn't pick for you.** When the dialogue shows
-  **two or more** selectable options (a service menu like Katheryne, or a
-  branching reply), flik goes quiet so *you* choose — it never blind-picks. It
-  spots a choice by two signals that must both hold: the white **"F" key-cap
-  prompt** (only ever shown when a choice is on screen) **and** ≥2 stacked
-  option pills. A lone single-option prompt (e.g. a bare "Yes?") it just presses
-  through, since that only advances the conversation. You can always tap
-  <kbd>F9</kbd> to pause manually too. 🕹️
 - **Foreground only.** No background input injection — that's deliberate, it's the part anti-cheat
   actually cares about. Works while Genshin is focused; that's it.
 - **Input-only**, no process/memory access — same lane as a hardware macro.
