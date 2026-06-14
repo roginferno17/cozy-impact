@@ -19,6 +19,9 @@ flik-captures/
 *.secret
 secrets/
 
+# --- Local-only project documentary (not for publication) ---
+Info.md
+
 # --- Python ---
 __pycache__/
 *.py[cod]
