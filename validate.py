@@ -4,7 +4,7 @@ Detection regression check for flik.
 Runs detect() over the labeled sample corpus and verifies every frame lands on
 the expected decision:
 
-    images/                -> dialogue MUST be True   (real dialogue / choices)
+    images/                -> dialogue MUST be True   (real dialogue lines)
     negative-images/       -> dialogue MUST be False  (world prompts, free roam)
     additional-flik-images/-> dialogue MUST be False  (lore documents; ✕ to close)
 

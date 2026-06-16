@@ -86,13 +86,13 @@ class Config:
     gold_min_row_transitions: int = 6
 
     # --- Detection: reply-choice pills (right side) -----------------------
-    # Covers choice screens that may have no bottom subtitle.
+    # Legacy bright-pixel readout, kept for calibration only -- flik no longer
+    # treats reply menus specially (the "|| Playing" HUD bar is the trigger, so
+    # it taps F through choice menus too).
     choice_roi: Roi = Roi(0.60, 0.60, 0.99, 0.82)
-    # The choice pills are light/near-white rounded boxes. Detect bright,
-    # low-saturation regions here.
     choice_white_hsv_lower: tuple = (0, 0, 180)
     choice_white_hsv_upper: tuple = (179, 60, 255)
-    choice_pixel_min: int = 1500
+    choice_pixel_min: int = 1500              # telemetry only (legacy readout)
 
     # --- Detection: dialogue HUD ("|| Playing" control bar, top-left) -----
     # The single most reliable "we are actually in dialogue/a cutscene" signal:
@@ -118,6 +118,15 @@ class Config:
     continue_roi: Roi = Roi(0.34, 0.85, 0.66, 0.96)   # bottom-center prompt band
     dark_screen_min: float = 0.85       # >=85% near-black -> interlude/loading
     dark_v_max: int = 50                # a pixel counts as "dark" at V <= this
+    # A whole-screen near-black reading is NOT enough on its own: a night cave
+    # or shadowed interior in free roam can read >=85% black while the HUD is
+    # still on screen, and gold scenery/clothing in the bottom band then trips
+    # the prompt/diamond check below (this caused a real false-fire). A genuine
+    # "Click to continue" interlude blanks the ENTIRE screen -- the minimap
+    # (top-left) and the party list (right) both vanish. So we additionally
+    # require those HUD regions to be near-fully black. Measured: real interlude
+    # ~1.00/1.00, dark free-roam cave ~0.79/0.83 -- 0.95 splits them with margin.
+    continue_hud_dark_min: float = 0.95
     # Slightly wider gold than the name band (the amber prompt), applied ONLY
     # here on an already-confirmed black screen -- keeps the name gate untouched.
     continue_gold_hsv_lower: tuple = (12, 80, 110)

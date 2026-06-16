@@ -39,26 +39,25 @@ Some quest cutscenes in Genshin *can't* be skipped — you just have to sit ther
 `flik` never reads or touches the game's process or memory. It just **looks at pixels** and presses a
 key — the same lane as a hardware macro keyboard. 🎹
 
-To decide "is this *really* dialogue?", it checks **two things that must BOTH be true**:
+To decide "is this *really* dialogue?", it watches for **one decisive signal** — the
+**"⏸ Playing"** HUD bar:
 
 ```
-   screen ─▶ capture (mss) ─▶ detect (opencv) ─┬─ ① gold speaker-name in the bottom band?
-                                               │
-                                               └─ ② "⏸ Playing" HUD bar in the top-left?
+   screen ─▶ capture (mss) ─▶ detect (opencv) ─── "⏸ Playing" HUD bar in the top-left?
                                                           │
-                                       both yes ▼                    anything else ▼
-                                    tap F every 0.3s                    stay quiet
+                                            yes ▼                    no ▼
+                                    tap F every 0.3s              stay quiet
 ```
 
-| # | Signal | Why it matters |
-| :-: | :----- | :------------- |
-| ① | 🟡 **Gold speaker-name** | The warm-gold name line at the bottom, shaped like *text* (many letter-strokes), not a solid gold blob. |
-| ② | ⏸️ **"Playing" HUD bar** | Genshin shows this top-left bar during dialogue/cutscenes **when conversation mode is set to _Auto_** — free roam shows the minimap + party list instead. *(Auto mode is required — see Quick start.)* |
+| Signal | Why it matters |
+| :----- | :------------- |
+| ⏸️ **"Playing" HUD bar** | Genshin shows this top-left bar during dialogue/cutscenes **when conversation mode is set to _Auto_** — free roam shows the minimap + party list instead. *(Auto mode is required — see Quick start.)* |
 
-That second check is the secret sauce. 🔑 Plenty of things in the open world are gold — gilded NPC
-guards, a gold-trimmed outfit, sunlight on water — and color alone can't always tell them apart from
-gold *text*. But the **"Playing" bar only ever appears in real dialogue**, so requiring it means
-flik stays silent in the open world no matter how much gold is on screen.
+That bar is the secret sauce. 🔑 Plenty of things in the open world are gold — gilded NPC
+guards, a gold-trimmed outfit, sunlight on water — but the **"Playing" bar only ever appears in
+real dialogue**, so keying off it means flik stays silent in the open world no matter what's on
+screen. (flik also still reads the gold speaker-name for its calibration readouts, but the
+"Playing" bar alone drives the decision.)
 
 > 🧪 Detection is regression-tested against a labeled set of real dialogue **and** real free-roam
 > frames (including ones that *used* to false-fire) — every one classifies correctly.
@@ -159,11 +158,11 @@ run.py           ▶️  entry point
 
 ## ⚖️ Honest limits
 
-- **It won't pick options for you — but it also won't wait.** flik presses through
-  dialogue, so if a **choice menu** comes up (a Katheryne service menu, a branching
-  reply), it'll happily tap **F** and pick one. When you actually need to choose,
-  just tap <kbd>F9</kbd> to pause flik, make your pick, then tap <kbd>F9</kbd> again
-  to resume. 🕹️
+- **It won't pick options for you — but it also won't wait.** flik taps F whenever
+  the **"⏸ Playing"** bar is up, so if a **reply menu** appears (a Katheryne service
+  menu, a branching choice) it'll happily press and pick one. When you actually need
+  to choose, tap <kbd>F9</kbd> to pause flik, make your pick, then tap <kbd>F9</kbd>
+  again to resume. 🕹️
 - **Foreground only.** No background input injection — that's deliberate, it's the part anti-cheat
   actually cares about. Works while Genshin is focused; that's it.
 - **Input-only**, no process/memory access — same lane as a hardware macro.

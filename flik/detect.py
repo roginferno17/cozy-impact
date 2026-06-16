@@ -1,29 +1,22 @@
 """
 Dialogue detection.
 
-Two conditions must BOTH hold to call it dialogue:
+The trigger is the "|| Playing" dialogue HUD bar in the top-left (hud_hit).
+Genshin only shows this control bar during dialogue/cutscenes -- free roam
+shows the minimap + party list instead -- so its presence is the single
+reliable "we are in a conversation, tap F" signal. flik presses through
+everything while it is on screen, including reply menus.
 
-  1. A gold speaker-name TEXT line in the bottom-center band (name_hit) -- enough
-     gold, shaped like a thin horizontal line of letter-strokes (not a solid
-     flood or vertically-scattered scenery).
-  2. The "|| Playing" dialogue HUD bar in the top-left (hud_hit) -- Genshin only
-     shows this during dialogue/cutscenes; free roam shows the minimap + party
-     list instead.
+A gold speaker-name TEXT line (name_hit) is still computed for telemetry /
+calibration, but it no longer gates the decision.
 
-Condition 2 is the decisive veto. Free roam can put real gold *into* the name
-band -- gilded NPC guards, a gold-patterned player outfit, golden scenery --
-which color and shape checks alone cannot reliably tell from gold *text*. But
-free roam never shows the "Playing" bar, so requiring it rejects those frames.
+An ADDITIVE second trigger (continue_hit) handles the black "Click to continue"
+story interludes, which have no HUD bar. It only fires when the whole screen is
+almost black AND a text-shaped gold prompt sits in the bottom-center band --
+conditions that never occur in normal dialogue or free roam.
 
-A bright reply-choice signal on the right (choice_hit) is computed for
-telemetry only; it never triggers on its own (world F-prompts, the party list,
-and lore documents all have bright right-side text but are not dialogue).
-
-A third, ADDITIVE trigger (continue_hit) handles the black "Click to continue"
-story interludes, which have neither the HUD bar nor a bottom speaker-name. It
-only fires when the whole screen is almost black AND a text-shaped gold prompt
-sits in the bottom-center band -- conditions that never occur in normal
-dialogue or free roam, so it leaves the gold-name + HUD path untouched.
+choice_pixels / choice_hit remain as a legacy bright-pixel readout for
+calibration only.
 """
 
 from __future__ import annotations
@@ -142,6 +135,16 @@ def _dark_fraction(frame: np.ndarray, v_max: int) -> float:
     return float((v <= v_max).mean())
 
 
+def _roi_dark_fraction(bgr_roi: np.ndarray, v_max: int) -> float:
+    """Fraction of an already-cropped ROI that is near-black. Used to confirm a
+    HUD region (minimap / party list) is gone, which only happens during a true
+    full-screen interlude -- not in a merely dark free-roam scene."""
+    if bgr_roi.size == 0:
+        return 0.0
+    v = cv2.cvtColor(bgr_roi, cv2.COLOR_BGR2HSV)[:, :, 2]
+    return float((v <= v_max).mean())
+
+
 def _has_continue_diamond(mask: np.ndarray, cfg, scale: float) -> bool:
     """True if the bottom-center gold mask holds the amber 'press to continue'
     diamond: a single compact, roughly-square, horizontally-centered gold blob.
@@ -190,10 +193,9 @@ def detect(frame: np.ndarray, cap: ScreenCapture, cfg: Config) -> DetectResult:
     else:
         gold_band, gold_components, gold_row_trans = 1.0, 0, 0
 
-    # A real speaker-name must be: enough gold, sparse (not a solid flood),
-    # a single horizontal line (not vertically scattered scenery), made of
-    # several strokes, AND text-like across a row (many gold/dark transitions
-    # -- the strongest "this is a line of letters, not scenery" signal).
+    # Telemetry only (not part of the decision): a real speaker-name is enough
+    # gold, sparse (not a solid flood), a single horizontal line (not scenery),
+    # several strokes, AND text-like across a row (many gold/dark transitions).
     name_hit = (
         gold >= cfg.gold_pixel_min
         and gold_fill <= cfg.gold_fill_max
@@ -203,21 +205,31 @@ def detect(frame: np.ndarray, cap: ScreenCapture, cfg: Config) -> DetectResult:
     )
     choice_hit = choice >= cfg.choice_pixel_min
 
-    # The dialogue HUD veto: Genshin only shows the "|| Playing" control bar
-    # (top-left) during dialogue/cutscenes, replacing the free-roam minimap +
-    # party list. This is what finally separates real gold *text* from gold
-    # *clothing* (e.g. gilded NPC guards) standing in the name band during free
-    # roam -- color and shape alone cannot.
+    # The trigger: Genshin only shows the "|| Playing" control bar (top-left)
+    # during dialogue/cutscenes, replacing the free-roam minimap + party list.
+    # Its presence is the decisive "we're in a conversation" signal -- free
+    # roam (even amid gold-clad NPCs) never shows it, so it can't false-fire.
     hud_match = _hud_match(frame, cap, cfg)
     hud_hit = hud_match >= cfg.hud_match_min
 
     # Additive third trigger: the near-black "Click to continue" story
     # interlude. Only considered when the WHOLE screen is almost black -- which
     # never happens in normal dialogue/free roam -- so it cannot affect the
-    # gold-name + HUD path above. Requires a text-shaped gold prompt in the
+    # HUD trigger above. Requires a text-shaped gold prompt in the
     # bottom-center band (lore documents are also black but have none there).
     dark_frac = _dark_fraction(frame, cfg.dark_v_max)
-    if dark_frac >= cfg.dark_screen_min:
+    # A whole-screen near-black reading alone is not enough: a dark cave / night
+    # scene in free roam can clear dark_screen_min while the HUD is still up,
+    # and gold clothing/scenery in the bottom band then trips the prompt below.
+    # A real interlude blanks the WHOLE screen, so the minimap (top-left) and
+    # party list (right) are gone -- require both HUD regions near-fully black.
+    hud_region_dark = _roi_dark_fraction(cap.crop(frame, cfg.hud_roi), cfg.dark_v_max)
+    party_region_dark = _roi_dark_fraction(cap.crop(frame, cfg.choice_roi), cfg.dark_v_max)
+    hud_hidden = (
+        hud_region_dark >= cfg.continue_hud_dark_min
+        and party_region_dark >= cfg.continue_hud_dark_min
+    )
+    if dark_frac >= cfg.dark_screen_min and hud_hidden:
         cont_crop = cap.crop(frame, cfg.continue_roi)
         cont_gold = _count_in_hsv_range(
             cont_crop, cfg.continue_gold_hsv_lower, cfg.continue_gold_hsv_upper
@@ -238,8 +250,10 @@ def detect(frame: np.ndarray, cap: ScreenCapture, cfg: Config) -> DetectResult:
     else:
         continue_hit = False
 
-    # Real dialogue (gold name + HUD) OR a "Click to continue" interlude.
-    dialogue = (name_hit and hud_hit) or continue_hit
+    # The trigger: the "|| Playing" HUD bar (dialogue/cutscene) OR a near-black
+    # "Click to continue" interlude. While either holds, flik taps F -- through
+    # normal lines and reply menus alike.
+    dialogue = hud_hit or continue_hit
 
     return DetectResult(
         dialogue=dialogue,

@@ -59,7 +59,7 @@ def main() -> None:
           f"(min {CONFIG.dark_screen_min:.2f}) -> continue={result.continue_hit}")
     print("-" * 48)
     print(f"DECISION: dialogue = {result.dialogue}  "
-          f"(name_hit AND hud_hit) OR continue_hit")
+          f"hud_hit OR continue_hit")
     print("-" * 48)
 
     # annotate
